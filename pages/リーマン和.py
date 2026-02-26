@@ -51,16 +51,16 @@ else:
 if a > b:
     a, b = b, a
 
+# グラフ選択
+all_genre = ["右リーマン和", "左リーマン和", "中央リーマン和", "上リーマン和", "下リーマン和"]
+genre = st.multiselect("表示させたいグラフの種類を選択してください。（複数選択可）",all_genre)
+
 # 保存形式の選択
 save_format = st.radio(
     "右上のカメラボタンで保存する形式を選択してください",
     ["png", "svg", "jpeg"],
     horizontal=True
 )
-
-# グラフ選択
-all_genre = ["右リーマン和", "左リーマン和", "中央リーマン和", "上リーマン和", "下リーマン和"]
-genre = st.multiselect("表示させたいグラフの種類を選択してください。（複数選択可）",all_genre)
 
 def plot_riemann_sum(x_values, y_values, title, bar_color='rgba(200, 50, 50, 0.6)'):
     bar_x = x_values # 棒の中心
@@ -111,7 +111,7 @@ if n!=0 and a-b!=0 and genre:
             'format': save_format,
             'filename': 'RiemannSum',
             'height': None, 
-            'width': None
+            'width': None,
         }
     }
     
@@ -120,7 +120,6 @@ if n!=0 and a-b!=0 and genre:
         x_right = x[1:] - bar_width / 2 # 右端点 2番目以降を取り出す 棒の中心
         y_right = f(x[1:])
         fig = plot_riemann_sum(x_right, y_right, "右リーマン和")
-        st.plotly_chart(fig, use_container_width=True, config=get_config("RightRiemannSum"))
 
     # 左リーマン和
     if "左リーマン和" in genre:           
