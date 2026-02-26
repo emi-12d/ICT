@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from sympy import symbols, sympify, lambdify, latex
 from sympy.core.sympify import SympifyError
-import io
+
 
 """# リーマン和"""
 
@@ -51,6 +51,13 @@ else:
 if a > b:
     a, b = b, a
 
+# 保存形式の選択
+save_format = st.radio(
+    "右上のカメラボタンで保存する形式を選択してください",
+    ["png", "svg", "jpeg"],
+    horizontal=True
+)
+
 # グラフ選択
 all_genre = ["右リーマン和", "左リーマン和", "中央リーマン和", "上リーマン和", "下リーマン和"]
 genre = st.multiselect("表示させたいグラフの種類を選択してください。（複数選択可）",all_genre)
@@ -79,77 +86,68 @@ def plot_riemann_sum(x_values, y_values, title, bar_color='rgba(200, 50, 50, 0.6
     )
     return fig
 
-def save_plot_as_html(fig, filename_prefix):
-    buffer = io.StringIO()
-    fig.write_html(buffer, include_plotlyjs='cdn')
-    html_bytes = buffer.getvalue().encode()
-    
-    st.download_button(
-        label=f"グラフを保存 (HTML)",
-        data=html_bytes,
-        file_name=f"{filename_prefix}.html",
-        mime='text/html',
-        key=filename_prefix
-    )
+def get_config(filename):
+    return {
+        'toImageButtonOptions': {
+            'format': save_format, # ラジオボタンの値
+            'filename': filename,  # ★ここで個別のファイル名を設定
+            'height': None, 
+            'width': None,
+            'scale': 2
+        }
+    }
 
 #区間・分割数
 if n!=0 and a-b!=0 and genre:
-    # # 1. セッションステート（記憶領域）の初期化
-    # if 'show_results' not in st.session_state:
-    #     st.session_state.show_results = False
+    st.write("f(x) = " + user_formula)
+    st.write("分割数： " + str(c))
+    st.write("区間： " + str(a) + "から" + str(b))  
 
-    # # 2. ボタンが押されたら、記憶領域を「True（表示する）」にする
-    # if st.button("結果の表示"):
-    #     st.session_state.show_results = True
+    bar_width = (b-a)/n  # 棒の幅
+    x = np.linspace(a, b, n+1)  # n+1に均等に分ける
 
-    # # 3. ボタンそのものではなく、記憶領域の状態を見て中身を表示する
-    # if st.session_state.show_results:
+    config = {
+        'toImageButtonOptions': {
+            'format': save_format,
+            'filename': 'RiemannSum',
+            'height': None, 
+            'width': None
+        }
+    }
+    
+    # 右リーマン和
+    if "右リーマン和" in genre:
+        x_right = x[1:] - bar_width / 2 # 右端点 2番目以降を取り出す 棒の中心
+        y_right = f(x[1:])
+        fig = plot_riemann_sum(x_right, y_right, "右リーマン和")
+        st.plotly_chart(fig, use_container_width=True, config=get_config("RightRiemannSum"))
 
-        st.write("f(x) = " + user_formula)
-        st.write("分割数： " + str(c))
-        st.write("区間： " + str(a) + "から" + str(b))  
+    # 左リーマン和
+    if "左リーマン和" in genre:           
+        x_left = x[:-1]  + bar_width / 2 # 右端点 2番目以降を取り出す
+        y_left = f(x[:-1])
+        fig = plot_riemann_sum(x_left, y_left, "左リーマン和")
+        st.plotly_chart(fig, use_container_width=True, config=get_config("LeftRiemannSum"))
 
-        bar_width = (b-a)/n  # 棒の幅
-        x = np.linspace(a, b, n+1)  # n+1に均等に分ける
-        
-        # 右リーマン和
-        if "右リーマン和" in genre:
-            x_right = x[1:] - bar_width / 2 # 右端点 2番目以降を取り出す 棒の中心
-            y_right = f(x[1:])
-            fig = plot_riemann_sum(x_right, y_right, "右リーマン和")
-            st.write(fig)
-            save_plot_as_html(fig, "RightRiemannSum")
+    # 中央リーマン和
+    if "中央リーマン和" in genre:
+        x_mid = x[:-1] + bar_width / 2
+        y_mid = f(x_mid)
+        fig = plot_riemann_sum(x_mid, y_mid, "中央リーマン和")
+        st.plotly_chart(fig, use_container_width=True, config=get_config("MidpointRiemannSum"))
 
-        # 左リーマン和
-        if "左リーマン和" in genre:           
-            x_left = x[:-1]  + bar_width / 2 # 右端点 2番目以降を取り出す
-            y_left = f(x[:-1])
-            fig = plot_riemann_sum(x_left, y_left, "左リーマン和")
-            st.write(fig)
-            save_plot_as_html(fig, "LeftRiemannSum")
+    # 上リーマン和
+    if "上リーマン和" in genre:
+        x_mid = x[:-1] + bar_width / 2
+        x_intervals = [(x[i], x[i+1]) for i in range(n)]  # 各区間 [x[i], x[i+1]]
+        y_top = np.array([max(f(np.linspace(start, end, 10))) for start, end in x_intervals])  # 各区間での最大値
+        fig = plot_riemann_sum(x_mid, y_top, "上リーマン和")
+        st.plotly_chart(fig, use_container_width=True, config=get_config("UpperRiemannSum"))
 
-        # 中央リーマン和
-        if "中央リーマン和" in genre:
-            x_mid = x[:-1] + bar_width / 2
-            y_mid = f(x_mid)
-            fig = plot_riemann_sum(x_mid, y_mid, "中央リーマン和")
-            st.write(fig)
-            save_plot_as_html(fig, "MidpointRiemannSum")
-
-        # 上リーマン和
-        if "上リーマン和" in genre:
-            x_mid = x[:-1] + bar_width / 2
-            x_intervals = [(x[i], x[i+1]) for i in range(n)]  # 各区間 [x[i], x[i+1]]
-            y_top = np.array([max(f(np.linspace(start, end, 10))) for start, end in x_intervals])  # 各区間での最大値
-            fig = plot_riemann_sum(x_mid, y_top, "上リーマン和")
-            st.write(fig)
-            save_plot_as_html(fig, "UpperRiemannSum")
-
-        # 下リーマン和
-        if "下リーマン和" in genre:
-            x_mid = x[:-1] + bar_width / 2
-            x_intervals = [(x[i], x[i+1]) for i in range(n)]
-            y_bottom = np.array([min(f(np.linspace(start, end, 10))) for start, end in x_intervals])  # 各区間での最小値
-            fig = plot_riemann_sum(x_mid, y_bottom, "下リーマン和")
-            st.write(fig)
-            save_plot_as_html(fig, "LowerRiemannSum")
+    # 下リーマン和
+    if "下リーマン和" in genre:
+        x_mid = x[:-1] + bar_width / 2
+        x_intervals = [(x[i], x[i+1]) for i in range(n)]
+        y_bottom = np.array([min(f(np.linspace(start, end, 10))) for start, end in x_intervals])  # 各区間での最小値
+        fig = plot_riemann_sum(x_mid, y_bottom, "下リーマン和")
+        st.plotly_chart(fig, use_container_width=True, config=get_config("LowerRiemannSum"))
