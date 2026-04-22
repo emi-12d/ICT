@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from sympy import symbols, sympify, lambdify, latex
+from sympy import symbols, sympify, lambdify, latex, integrate
 from sympy.core.sympify import SympifyError
 
 
@@ -136,9 +136,19 @@ def animation_riemann(genre_type, start_n, end_n=1000):
 def plot_riemann_sum():
     x_curve = np.linspace(a, b, 500) # 曲線用のx
     y_curve = f(x_curve) # 曲線用のy
+
+    exact_val = integrate(expr, (x_sym, a, b)) # aからbまで積分
+    val = float(exact_val.evalf()) # 小数に変換
+
     fig = go.Figure() # グラフの作成
-    # 関数の曲線
-    fig.add_trace(go.Scatter(x=x_curve, y=y_curve, fill='tozeroy', line_color = 'red', name="y = f(x)"))
+    # 塗りつぶし
+    fig.add_trace(go.Scatter(x=x_curve, y=y_curve, fill='tozeroy', mode='none', fillcolor='rgba(200, 50, 50, 0.6)', name="リーマン和"))
+    # 青い曲線
+    fig.add_trace(go.Scatter(x=x_curve, y=y_curve, mode='lines', line=dict(color='blue'), name="y = f(x)"))
+    fig.update_layout(
+        title=(f"(f(x) = {user_formula})<br>値 ≈ {val:.5f}<br>区間：{str(a)}から{str(b)} "),
+        xaxis_title="x", yaxis_title="f(x)", template="plotly_white", height=600
+    )
     return fig
 
 def get_config(g):
