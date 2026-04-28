@@ -66,6 +66,10 @@ def animation_riemann(genre_type, start_n, end_n=1000):
     x_curve = np.linspace(a, b, 500) # 曲線用のx
     y_curve = f(x_curve) # 曲線用のy
 
+    exact_val = integrate(expr, (x_sym, a, b)) # aからbまで定積分
+    # グラフの塗りつぶす閾値の設定 0.05か面積の1%
+    threshold = max(0.05,abs(exact_val) * 0.01)
+
     frames = []
     slider_steps = []
 
@@ -92,18 +96,37 @@ def animation_riemann(genre_type, start_n, end_n=1000):
             y_bar = np.array([np.min(f(np.linspace(s, e, samp))) for s, e in zip(x_split[:-1], x_split[1:])])
 
         val = np.sum(y_bar * bar_width)
-
+        judge = abs(val - exact_val)
         frame_name = f"{genre_type}_{step_n}"
 
-        frames.append(go.Frame(
-            data=[
-                go.Scatter(x=x_curve, y=y_curve, mode='lines', line=dict(color='blue'), name="f(x)"),
-                go.Bar(x=x_bar, y=y_bar, width=bar_width, marker=dict(color='rgba(200, 50, 50, 0.6)'), name="リーマン和")
-            ],
-            name=frame_name,
-            layout=go.Layout(title=f"{genre_type} (f(x) = {user_formula})<br>値 = {val:.5f}")           
-        ))
-        
+        # 分割されたグラフ
+        if judge > threshold:
+            frames.append(go.Frame(
+                data=[
+                    go.Scatter(x=[a], y=[0], mode='none', fill='none', showlegend=False), # 塗りつぶした用ダミー
+                    go.Scatter(x=x_curve, y=y_curve, mode='lines', line=dict(color='blue'), name="f(x)"),
+                    go.Bar(x=x_bar, y=y_bar, width=bar_width, marker=dict(color='rgba(200, 50, 50, 0.6)'), name="リーマン和")
+                ],
+                name=frame_name,
+                layout=go.Layout(title=f"{genre_type} (f(x) = {user_formula})<br>値 = {val:.5f}")           
+            ))
+        # 塗りつぶされたグラフ
+        else:
+            frames.append(go.Frame(
+                data=[
+                    go.Scatter(x=x_curve, y=y_curve, fill='tozeroy', mode='none', fillcolor='rgba(200, 50, 50, 0.6)', showlegend=False),
+                    go.Scatter(x=x_curve, y=y_curve, mode='lines', line=dict(color='blue'), name="f(x)"),
+                    go.Bar(x=[a], y=[0], width=0, marker=dict(color='rgba(200, 50, 50, 0.6)'), name="リーマン和") # 棒グラフダミー
+                ],
+                name=frame_name,
+                layout=go.Layout(title=f"{genre_type} (f(x) = {user_formula})<br>値 = {val:.5f}")           
+            ))
+            slider_steps.append({
+                "method": "animate",
+                "args": [[frame_name], {"mode": "immediate", "frame": {"duration": 300, "redraw": True}, "transition": {"duration": 0}}],
+                "label": "∞"
+            })
+            break
         slider_steps.append({
             "method": "animate",
             "args": [[frame_name], {"mode": "immediate", "frame": {"duration": 300, "redraw": True}, "transition": {"duration": 0}}],
