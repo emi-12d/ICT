@@ -60,9 +60,12 @@ save_format = st.radio(
     ["png", "svg", "jpeg"],
     horizontal=True
 )
-# アニメーション付きグラフの生成
+# アニメーション付きグラフの生成 
 def animation_riemann(genre_type, start_n, end_n=1000):
-    steps_n = np.unique(np.geomspace(start_n, end_n, num=15).astype(int))
+    # 分割数のリスト （最初の分割数から1000までの間をnumだけ分割して格納）
+    steps_n = np.unique(np.geomspace(start_n, end_n, num=50).astype(int))
+    
+
     x_curve = np.linspace(a, b, 500) # 曲線用のx
     y_curve = f(x_curve) # 曲線用のy
 
@@ -73,7 +76,7 @@ def animation_riemann(genre_type, start_n, end_n=1000):
     frames = []
     slider_steps = []
 
-    for step_n in steps_n:
+    for i, step_n in enumerate(steps_n):
         bar_width = (b-a) / step_n # 棒の幅
         x_split = np.linspace(a, b, step_n + 1)  # step_n+1に均等に分ける
 
@@ -99,8 +102,10 @@ def animation_riemann(genre_type, start_n, end_n=1000):
         judge = abs(val - exact_val)
         frame_name = f"{genre_type}_{step_n}"
 
+        is_last_step = (i == len(steps_n) - 1)
+
         # 分割されたグラフ
-        if judge > threshold:
+        if (judge > threshold or step_n < 100) and not is_last_step:
             frames.append(go.Frame(
                 data=[
                     go.Scatter(x=[a], y=[0], mode='none', fill='none', showlegend=False), # 塗りつぶした用ダミー
@@ -119,17 +124,17 @@ def animation_riemann(genre_type, start_n, end_n=1000):
                     go.Bar(x=[a], y=[0], width=0, marker=dict(color='rgba(200, 50, 50, 0.6)'), name="リーマン和") # 棒グラフダミー
                 ],
                 name=frame_name,
-                layout=go.Layout(title=f"{genre_type} (f(x) = {user_formula})<br>値 = {val:.5f}")           
+                layout=go.Layout(title=f"{genre_type} (f(x) = {user_formula})<br>値 = {exact_val:.5f}")           
             ))
             slider_steps.append({
                 "method": "animate",
-                "args": [[frame_name], {"mode": "immediate", "frame": {"duration": 300, "redraw": True}, "transition": {"duration": 0}}],
+                "args": [[frame_name], {"mode": "immediate", "frame": {"duration": 100, "redraw": True}, "transition": {"duration": 0}}],
                 "label": "∞"
             })
             break
         slider_steps.append({
             "method": "animate",
-            "args": [[frame_name], {"mode": "immediate", "frame": {"duration": 300, "redraw": True}, "transition": {"duration": 0}}],
+            "args": [[frame_name], {"mode": "immediate", "frame": {"duration": 100, "redraw": True}, "transition": {"duration": 0}}],
             "label": str(step_n)
         })
 
@@ -143,7 +148,7 @@ def animation_riemann(genre_type, start_n, end_n=1000):
             updatemenus=[dict(  # グラフ上にボタンの配置
                 type="buttons", showactive=False, y=-0.15, x=0, xanchor="left", yanchor="top", direction="right",
                 buttons=[
-                    dict(label="▶", method="animate", args=[None, {"frame": {"duration": 300, "redraw": True}, "fromcurrent": True, "transition": {"duration": 0}}]),
+                    dict(label="▶", method="animate", args=[None, {"frame": {"duration": 100, "redraw": True}, "fromcurrent": True, "transition": {"duration": 0}}]),
                     dict(label="■", method="animate", args=[[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate", "transition": {"duration": 0}}])
                 ]
             )],
