@@ -11,15 +11,23 @@ from sympy.core.sympify import SympifyError
 """___"""
 
 
-user_formula = st.text_input("yを取り除いた数式を入力してください。　例）sin(x)")
+user_formula = st.text_input("yを取り除いた数式を入力してください。　例）sin(x), pi * x")
 
 x_sym = symbols('x')  # xを定義
 
 if user_formula.strip():  
     try:
-        expr = sympify(user_formula)  # 文字列をsympyの式に変換
-        f = lambdify(x_sym, expr, 'numpy')  # numpy対応関数に変換
+        expr = sympify(user_formula)    # 文字列をsympyの式に変換
+        raw_f = lambdify(x_sym, expr, 'numpy')  # numpy対応関数に変換
 
+        # 定数（xを含まない式）でもエラーが出ないようにする
+        def f(x_array):
+            y_array = raw_f(x_array)
+            # もし結果がただの数字（スカラー）だったら、x_arrayと同じ長さにコピーして引き伸ばす
+            if np.isscalar(y_array):
+                return np.full_like(x_array, y_array, dtype=float)
+            return y_array
+        
         latex_expr = latex(expr) #latex表示
         st.latex(f"f(x) = {latex_expr}")
 
@@ -65,7 +73,6 @@ def animation_riemann(genre_type, start_n, end_n=1000):
     # 分割数のリスト （最初の分割数から1000までの間をnumだけ分割して格納）
     steps_n = np.unique(np.geomspace(start_n, end_n, num=50).astype(int))
     
-
     x_curve = np.linspace(a, b, 500) # 曲線用のx
     y_curve = f(x_curve) # 曲線用のy
 
