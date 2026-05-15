@@ -49,20 +49,19 @@ def parse_math_input(val_str):
 
 if method == "指定する":
     col_n,col_a,col_b = st.columns(3)
-    n_val = col_n.number_input("分割数を入力してください", value=0, step=1)
-    a_str = st.text_input("区域の始まりを入力してください", 0)
+    n_val = col_n.number_input("分割数を入力してください", value=None, min_value = 1, step=1, placeholder="数値を入力")
+    a_str = st.text_input("区域の始まりを入力してください", "0")
     a = parse_math_input(a_str)
-    b_str = st.text_input("区域の終わりを入力してください", 0)
+    b_str = st.text_input("区域の終わりを入力してください", "0")
     b = parse_math_input(b_str)
-    c = n_val
 
 else:
     col_a,col_b = st.columns(2)
     with col_a:
-        a_str = st.text_input("区域の始まりを入力してください", 0)
+        a_str = st.text_input("区域の始まりを入力してください", "0")
         a = parse_math_input(a_str)
     with col_b:
-        b_str = st.text_input("区域の終わりを入力してください", 0)
+        b_str = st.text_input("区域の終わりを入力してください", "0")
         b = parse_math_input(b_str)
 
 if a > b:
@@ -89,8 +88,8 @@ def animation_riemann(genre_type, start_n, end_n=1000):
     x_curve = np.linspace(a, b, 500) # 曲線用のx
     y_curve = f(x_curve) # 曲線用のy
 
-    exact_val = integrate(expr, (x_sym, a, b)) # aからbまで定積分
-    # グラフの塗りつぶす閾値の設定 0.05か面積の1%
+    exact_val = float(integrate(expr, (x_sym, a, b))) # aからbまで定積分
+    # グラフの塗りつぶす閾値の設定 (0.05か面積の1%)
     threshold = max(0.05,abs(exact_val) * 0.01)
 
     frames = []
@@ -199,63 +198,37 @@ def plot_riemann_sum():
     )
     return fig
 
+# グラフ生成の設定
 def get_config(g):
-    if g == "右リーマン和":
-        filename = "RightRiemannSum"
-    elif g == "左リーマン和":
-        filename = "LeftRiemannSum"
-    elif g == "中央リーマン和":
-        filename = "MidpointRiemannSum"
-    elif g == "上リーマン和":
-        filename = "UpperRiemannSum"
-    else:
-        filename = "LowerRiemannSum"
+    filename_map = {
+        "右リーマン和" : "RightRiemannSum",
+        "左リーマン和" : "LeftRiemannSum",
+        "中央リーマン和" : "MidpointRiemannSum",
+        "上リーマン和" : "UpperRiemannSum",
+        "下リーマン和" : "LowerRiemannSum",
+        "Infinity" : "InfinityRiemannSum"
+    }
+    filename = filename_map.get(g, "RiemannSum")
     return {
         'toImageButtonOptions': {
             'format': save_format, # ラジオボタンの値
-            'filename': filename,  # ここで個別のファイル名を設定
-            'height': None, 
-            'width': None,
+            "filename" : filename,
             'scale': 2
         }
     }
 
-# ∞の場合のグラフの生成
-if method == '∞' and a-b != 0:
-    st.write("f(x) = " + user_formula)
-    st.write("区間： " + a_str + "から" + b_str)  
+# 描画の実行
+if a != b:
+    st.write("---")
+    st.write(f"f(x) = {user_formula}")
+    st.write(f"区間 : {a_str} から {b_str}")
 
-    config = {
-        'toImageButtonOptions': {
-            'format': save_format,
-            'filename': 'RiemanSum',
-            'height': None, 
-            'width': None,
-            'scale': 2
-        }
-    }
-    fig = plot_riemann_sum()
-    st.plotly_chart(fig, use_container_width=True, config=config, key=f"static_inf_{user_formula}_{a}_{b}")
-
-#区間・分割数
-if method == "指定する":
-    if n_val!=0 and a-b!=0 and genre:
-        st.write("f(x) = " + user_formula)
-        st.write("分割数： " + str(c))
-        st.write("区間： " + a_str + "から" + b_str)  
-
-        config = {
-            'toImageButtonOptions': {
-                'format': save_format,
-                'filename': 'RiemanSum',
-                'height': None, 
-                'width': None,
-                'scale': 2
-            }
-        }
-
+    if method == "指定する" and n_val is not None and genre:
+        st.write(f"分割数 : {n_val}")
         for g in genre:
             fig = animation_riemann(g, n_val)
             st.plotly_chart(fig, use_container_width=True, config=get_config(g), key=f"anim_{g}")
-
-
+    elif method == "∞":
+        fig = plot_riemann_sum()
+        st.plotly_chart(fig, use_container_width=True, config=get_config("Infinity"), key=f"static_inf_{user_formula}_{a}_{b}")
+ 
