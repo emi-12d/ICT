@@ -50,22 +50,23 @@ def parse_math_input(val_str):
 if method == "指定する":
     col_n,col_a,col_b = st.columns(3)
     n_val = col_n.number_input("分割数を入力してください", value=None, min_value = 1, step=1, placeholder="数値を入力")
-    a_str = st.text_input("区域の始まりを入力してください", "0")
+    a_str = col_a.text_input("区間の始まりを入力してください", "0")
     a = parse_math_input(a_str)
-    b_str = st.text_input("区域の終わりを入力してください", "0")
+    b_str = col_b.text_input("区間の終わりを入力してください", "0")
     b = parse_math_input(b_str)
 
 else:
     col_a,col_b = st.columns(2)
     with col_a:
-        a_str = st.text_input("区域の始まりを入力してください", "0")
+        a_str = col_a.text_input("区間の始まりを入力してください", "0")
         a = parse_math_input(a_str)
     with col_b:
-        b_str = st.text_input("区域の終わりを入力してください", "0")
+        b_str = col_b.text_input("区間の終わりを入力してください", "0")
         b = parse_math_input(b_str)
 
 if a > b:
     a, b = b, a
+    a_str, b_str = b_str, a_str
 
 # グラフ選択
 if method == '指定する':
