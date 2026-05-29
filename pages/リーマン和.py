@@ -220,11 +220,18 @@ def get_config(g):
 # 描画の実行
 if a != b:
     st.write("---")
-    st.write(f"f(x) = {user_formula}")
-    st.write(f"区間 : {a_str} から {b_str}")
+    
+    # 入力された文字列をsympyで数式化し、さらにLaTeX文字列に変換する
+    latex_f = latex(sympify(user_formula))
+    latex_a = latex(sympify(a_str))
+    latex_b = latex(sympify(b_str))
+    
+    # $ $ で囲んでMarkdownとして出力する
+    st.markdown(f"**$f(x) = {latex_f}$**")
+    st.markdown(f"**区間 : ${latex_a}$ から ${latex_b}$**")
 
     if method == "指定する" and n_val is not None and genre:
-        st.write(f"分割数 : {n_val}")
+        st.write(f"**分割数 : {n_val}**")
         for g in genre:
             fig = animation_riemann(g, n_val)
             st.plotly_chart(fig, use_container_width=True, config=get_config(g), key=f"anim_{g}")
