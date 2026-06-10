@@ -3,8 +3,9 @@ import os
 import base64 # 画像データの変換
 
 import io
-from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPM
+import resvg_py # png変換
+from PIL import Image # JPEG変換
+
 
 
 st.title("🖼️ 画像アプリ")
@@ -81,8 +82,8 @@ else:
                     # PNG用ボタン（svglibを使って変換）
                     with btn_cols[1]:
                         # メモリ上でSVGデータを読み込み、PNGに変換
-                        drawing = svg2rlg(io.BytesIO(image_data))
-                        png_data = renderPM.drawToString(drawing, fmt="PNG")
+                        svg_string = image_data.decode("utf-8")
+                        png_data = resvg_py.svg_to_bytes(svg_string=svg_string)
                         
                         st.download_button(
                             label="🖼️ .png",
@@ -95,8 +96,16 @@ else:
                     # JPEG用ボタン（svglibを使って変換）
                     with btn_cols[2]:
                         # 背景を白（0xFFFFFF）に指定してJPEGに変換
-                        drawing = svg2rlg(io.BytesIO(image_data))
-                        jpeg_data = renderPM.drawToString(drawing, fmt="JPG", bg=0xFFFFFF)
+                        # 1. resvg_pyで作った綺麗なPNGデータをPillowで開く
+                        png_img = Image.open(io.BytesIO(png_data)).convert("RGBA")
+                        # 2. 真っ白な背景キャンバスを作成
+                        bg = Image.new("RGBA", png_img.size, (255, 255, 255, 255))
+                        # 3. 白背景の上に画像を貼り付ける（透明部分が白になる）
+                        bg.paste(png_img, (0, 0), png_img)
+                        # 4. JPEG専用の形式（RGB）に変換してデータを保存
+                        jpeg_io = io.BytesIO()
+                        bg.convert("RGB").save(jpeg_io, format="JPEG")
+                        jpeg_data = jpeg_io.getvalue()
                         
                         st.download_button(
                             label="🖼️ .jpg",

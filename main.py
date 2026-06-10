@@ -4,8 +4,8 @@ st.set_page_config(page_title="ICT教材バンク")
 
 # サイドバーに表示する項目
 home = st.Page("exp/home.py", title="ホーム", default=True)
-calc_hub = st.Page("exp/test.py", title="自動計算アプリ")
-image_app = st.Page("exp/test1.py", title="画像アプリ")
+calc_hub = st.Page("exp/mathapp.py", title="自動計算アプリ")
+image_app = st.Page("exp/imageapp.py", title="画像アプリ")
 
 # 自動計算アプリの項目
 riemann = st.Page("pages/リーマン和.py", title="リーマン和")
