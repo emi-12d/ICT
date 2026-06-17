@@ -12,12 +12,12 @@ from sympy.core.sympify import SympifyError
 
 
 user_formula = st.text_input("yを取り除いた数式を入力してください。　例）sin(x), pi * x")
-
+latex_f = latex(sympify(user_formula))
 x_sym = symbols('x')  # xを定義
 
 if user_formula.strip():  
     try:
-        expr = sympify(user_formula)    # 文字列をsympyの式に変換
+        expr = sympify(user_formula)
         raw_f = lambdify(x_sym, expr, 'numpy')  # numpy対応関数に変換
 
         # 定数（xを含まない式）でもエラーが出ないようにする
@@ -27,9 +27,7 @@ if user_formula.strip():
             if np.isscalar(y_array):
                 return np.full_like(x_array, y_array, dtype=float)
             return y_array
-        
-        latex_expr = latex(expr) #latex表示
-        st.latex(f"f(x) = {latex_expr}")
+        st.latex(f"f(x) = {latex_f}")
 
 
     except SympifyError as e:
@@ -54,6 +52,7 @@ if method == "指定する":
     a = parse_math_input(a_str)
     b_str = col_b.text_input("区間の終わりを入力してください", "0")
     b = parse_math_input(b_str)
+    
 
 else:
     col_a,col_b = st.columns(2)
@@ -67,6 +66,13 @@ else:
 if a > b:
     a, b = b, a
     a_str, b_str = b_str, a_str
+
+# 入力された文字列をsympyで数式化し、さらにLaTeX文字列に変換する
+latex_a = latex(sympify(a_str))
+latex_b = latex(sympify(b_str))
+
+if a != b:
+    st.latex(f"f(x) = \int_{{{latex_a}}}^{{{latex_b}}} {latex_f} \, dx")
 
 # グラフ選択
 if method == '指定する':
@@ -221,12 +227,6 @@ def get_config(g):
 # 描画の実行
 if a != b:
     st.write("---")
-    
-    # 入力された文字列をsympyで数式化し、さらにLaTeX文字列に変換する
-    latex_f = latex(sympify(user_formula))
-    latex_a = latex(sympify(a_str))
-    latex_b = latex(sympify(b_str))
-    
     # $ $ で囲んでMarkdownとして出力する
     st.markdown(f"**$f(x) = {latex_f}$**")
     st.markdown(f"**区間 : ${latex_a}$ から ${latex_b}$**")
