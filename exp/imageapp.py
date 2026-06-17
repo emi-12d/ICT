@@ -95,14 +95,13 @@ else:
 
                     # JPEG用ボタン（svglibを使って変換）
                     with btn_cols[2]:
-                        # 背景を白（0xFFFFFF）に指定してJPEGに変換
-                        # 1. resvg_pyで作った綺麗なPNGデータをPillowで開く
+                        # PNGデータをPillowで開く
                         png_img = Image.open(io.BytesIO(png_data)).convert("RGBA")
-                        # 2. 真っ白な背景キャンバスを作成
+                        # 真っ白な背景キャンバスを作成
                         bg = Image.new("RGBA", png_img.size, (255, 255, 255, 255))
-                        # 3. 白背景の上に画像を貼り付ける（透明部分が白になる）
+                        # 白背景の上に画像を貼り付ける
                         bg.paste(png_img, (0, 0), png_img)
-                        # 4. JPEG専用の形式（RGB）に変換してデータを保存
+                        # JPEG専用の形式（RGB）に変換してデータを保存
                         jpeg_io = io.BytesIO()
                         bg.convert("RGB").save(jpeg_io, format="JPEG")
                         jpeg_data = jpeg_io.getvalue()
