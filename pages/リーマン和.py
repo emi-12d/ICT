@@ -196,27 +196,27 @@ def animation_riemann(genre_type, start_n, end_n=1000):
     )
     return fig
 
+# MP4のバイナリデータに変換
 def generate_mp4_bytes(fig):
-    """PlotlyのアニメーションをMP4のバイナリデータに変換する関数"""
     frames = []
     
     # 全てのフレーム（コマ）を1枚ずつ画像(PNG)にしてリストに貯める
     for frame in fig.frames:
-        # フレームのデータと、元のレイアウトを合体させて一時的なグラフを作る
+        # フレームのデータと、元のレイアウトを合体させて一時的なグラフを作成
         temp_fig = go.Figure(data=frame.data, layout=fig.layout)
         
-        # タイトルの変化（「値 = 〇〇」など）も反映させる
+        # タイトルの反映
         if frame.layout and frame.layout.title:
              temp_fig.update_layout(title=frame.layout.title)
              
-        # PNG画像のバイト列に変換（ここで kaleido が裏で撮影してくれます）
+        # PNG画像のバイト列に変換
         img_bytes = temp_fig.to_image(format="png", width=800, height=600)
         
-        # imageio で読み込める画像データに変換して追加
+        # imageio で読み込める画像データに変換
         img = imageio.imread(img_bytes)
         frames.append(img)
         
-    # 集めた画像を繋いでMP4にする（fps=10 なら1秒間に10コマ進む設定です）
+    # 集めた画像を繋いでMP4にする（fps=10 なら1秒間に10コマ進む）
     mp4_io = io.BytesIO()
     imageio.mimsave(mp4_io, frames, format='mp4', fps=10)
     
@@ -273,37 +273,39 @@ if a != b and user_formula.strip():
             fig = animation_riemann(g, n_val)
             st.plotly_chart(fig, use_container_width=True, config=get_config(g), key=f"anim_{g}")
 
-            # グラフを「動く状態のまま」HTMLデータに変換する
-            html_str = fig.to_html(include_plotlyjs=True)
-                    
-            # ダウンロードボタンを設置する
-            st.download_button(
-                label=f"📥 {g}のアニメーションを保存（HTML）",
-                data=html_str,
-                file_name=f"{get_config(g)['toImageButtonOptions']['filename']}_anim.html",
-                mime="text/html",
-                key=f"dl_html_{g}"  # ★修正2： forループ内でエラーを起こさないための名札（key）を追加
-            )
-
-            if st.button(f"🎥 {g}のMP4動画を生成する（時間がかかります）", key=f"btn_mp4_{g}"):
-    
-                # くるくる回るローディング表示を出しておく
-                with st.spinner("MP4動画を生成中です...（コマ数に応じて数十秒〜数分かかります）"):
-                    try:
-                        # MP4データを生成
-                        mp4_bytes = generate_mp4_bytes(fig)
-                        st.success("動画の生成が完了しました！下のボタンから保存できます。")
+            col1, col2 = st.columns(2)
+            with col1:
+                # グラフを「動く状態のまま」HTMLデータに変換する
+                html_str = fig.to_html(include_plotlyjs=True)
                         
-                        # 生成に成功したら、ダウンロードボタンを出現させる
-                        st.download_button(
-                            label=f"📥 {g}のMP4を保存",
-                            data=mp4_bytes,
-                            file_name=f"{g}_anim.mp4",
-                            mime="video/mp4",
-                            key=f"dl_mp4_{g}"
-                        )
-                    except Exception as e:
-                        st.error(f"エラーが発生しました: {e}\n\n※ kaleido または imageio が正しくインストールされていない可能性があります。")
+                # ダウンロードボタンを設置する
+                st.download_button(
+                    label=f"📥 {g}のアニメーションを保存（HTML）",
+                    data=html_str,
+                    file_name=f"{get_config(g)['toImageButtonOptions']['filename']}_anim.html",
+                    mime="text/html",
+                    key=f"dl_html_{g}" 
+                )
+            with col2:                        
+                if st.button(f"🎥 {g}のMP4動画を生成する（時間がかかります）", key=f"btn_mp4_{g}"):
+        
+                    # ローディング表示
+                    with st.spinner("MP4動画を生成中です...（コマ数に応じて数十秒〜数分かかります）"):
+                        try:
+                            # MP4データを生成
+                            mp4_bytes = generate_mp4_bytes(fig)
+                            st.success("動画の生成が完了しました！下のボタンから保存できます。")
+                            
+                            # 生成に成功したら、ダウンロードボタンを出現させる
+                            st.download_button(
+                                label=f"📥 {g}のMP4を保存",
+                                data=mp4_bytes,
+                                file_name=f"{g}_anim.mp4",
+                                mime="video/mp4",
+                                key=f"dl_mp4_{g}"
+                            )
+                        except Exception as e:
+                            st.error(f"エラーが発生しました: {e}\n\n※ kaleido または imageio が正しくインストールされていない可能性があります。")
     elif method == "∞":
         fig = plot_riemann_sum()
         st.plotly_chart(fig, use_container_width=True, config=get_config("Infinity"), key=f"static_inf_{user_formula}_{a}_{b}")
