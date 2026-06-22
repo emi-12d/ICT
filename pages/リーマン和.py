@@ -12,13 +12,18 @@ from sympy.core.sympify import SympifyError
 
 
 user_formula = st.text_input("yを取り除いた数式を入力してください。　例）sin(x), pi * x")
-latex_f = latex(sympify(user_formula))
-x_sym = symbols('x')  # xを定義
 
 if user_formula.strip():  
     try:
+        # latex_f = latex(sympify(user_formula))
+        x_sym = symbols('x')  # xを定義
         expr = sympify(user_formula)
+        latex_f = latex(expr)
         raw_f = lambdify(x_sym, expr, 'numpy')  # numpy対応関数に変換
+
+        x_k_sym = symbols('x_k') # x_kを定義
+        expr_xk = expr.subs(x_sym, x_k_sym) # x を x_k に置き換える
+        latex_f_xk = latex(expr_xk)
 
         # 定数（xを含まない式）でもエラーが出ないようにする
         def f(x_array):
@@ -71,9 +76,12 @@ if a > b:
 latex_a = latex(sympify(a_str))
 latex_b = latex(sympify(b_str))
 
-if a != b:
-    st.latex(f"f(x) = \int_{{{latex_a}}}^{{{latex_b}}} {latex_f} \, dx")
-
+# 区間を入れた式の表示
+if a != b and user_formula.strip():
+    if method == "指定する":
+        st.latex(rf"I = \int_{{{latex_a}}}^{{{latex_b}}} {latex_f} \, dx \fallingdotseq \sum_{{k=1}}^{{{n_val}}} {latex_f_xk}\Delta x")
+    else:
+        st.latex(rf"I = \int_{{{latex_a}}}^{{{latex_b}}} {latex_f} \, dx = \lim_{{n\to \infty}} \sum_{{k=1}}^n {latex_f_xk}\Delta x")
 # グラフ選択
 if method == '指定する':
     all_genre = ["右リーマン和", "左リーマン和", "中央リーマン和", "上リーマン和", "下リーマン和"]
@@ -225,7 +233,7 @@ def get_config(g):
     }
 
 # 描画の実行
-if a != b:
+if a != b and user_formula.strip():
     st.write("---")
     # $ $ で囲んでMarkdownとして出力する
     st.markdown(f"**$f(x) = {latex_f}$**")
@@ -236,6 +244,17 @@ if a != b:
         for g in genre:
             fig = animation_riemann(g, n_val)
             st.plotly_chart(fig, use_container_width=True, config=get_config(g), key=f"anim_{g}")
+            # グラフを「動く状態のまま」HTMLデータに変換する
+            html_str = fig.to_html(include_plotlyjs=True)
+                    
+            # ダウンロードボタンを設置する
+            st.download_button(
+                label=f"📥 {g}のアニメーションを保存（HTML）",
+                data=html_str,
+                file_name=f"{get_config(g)['toImageButtonOptions']['filename']}_anim.html",
+                mime="text/html",
+                key=f"dl_html_{g}"  # ★修正2： forループ内でエラーを起こさないための名札（key）を追加
+            )
     elif method == "∞":
         fig = plot_riemann_sum()
         st.plotly_chart(fig, use_container_width=True, config=get_config("Infinity"), key=f"static_inf_{user_formula}_{a}_{b}")
