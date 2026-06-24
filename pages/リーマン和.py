@@ -305,7 +305,7 @@ if a != b and user_formula.strip():
                                 key=f"dl_mp4_{g}"
                             )
                         except Exception as e:
-                            st.error(f"エラーが発生しました: {e}\n\n※ kaleido または imageio が正しくインストールされていない可能性があります。")
+                            st.error(f"エラーが発生しました: {e}\n\n")
     elif method == "∞":
         fig = plot_riemann_sum()
         st.plotly_chart(fig, use_container_width=True, config=get_config("Infinity"), key=f"static_inf_{user_formula}_{a}_{b}")
