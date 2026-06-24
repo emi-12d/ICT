@@ -13,12 +13,16 @@ from sympy.core.sympify import SympifyError
 
 user_formula = st.text_input("yを取り除いた数式を入力してください。　例）sin(x), pi * x")
 
-x_sym = symbols('x')  # xを定義
-
 if user_formula.strip():  
     try:
-        expr = sympify(user_formula)    # 文字列をsympyの式に変換
+        x_sym = symbols('x')  # xを定義
+        expr = sympify(user_formula)
+        latex_f = latex(expr)
         raw_f = lambdify(x_sym, expr, 'numpy')  # numpy対応関数に変換
+
+        x_k_sym = symbols('x_k') # x_kを定義
+        expr_xk = expr.subs(x_sym, x_k_sym) # x を x_k に置き換える
+        latex_f_xk = latex(expr_xk)
 
         # 定数（xを含まない式）でもエラーが出ないようにする
         def f(x_array):
@@ -27,9 +31,7 @@ if user_formula.strip():
             if np.isscalar(y_array):
                 return np.full_like(x_array, y_array, dtype=float)
             return y_array
-        
-        latex_expr = latex(expr) #latex表示
-        st.latex(f"f(x) = {latex_expr}")
+        st.latex(f"f(x) = {latex_f}")
 
 
     except SympifyError as e:
@@ -54,6 +56,7 @@ if method == "指定する":
     a = parse_math_input(a_str)
     b_str = col_b.text_input("区間の終わりを入力してください", "0")
     b = parse_math_input(b_str)
+    
 
 else:
     col_a,col_b = st.columns(2)
@@ -68,6 +71,16 @@ if a > b:
     a, b = b, a
     a_str, b_str = b_str, a_str
 
+# 入力された文字列をsympyで数式化し、さらにLaTeX文字列に変換する
+latex_a = latex(sympify(a_str))
+latex_b = latex(sympify(b_str))
+
+# 区間を入れた式の表示
+if a != b and user_formula.strip():
+    if method == "指定する":
+        st.latex(rf"I = \int_{{{latex_a}}}^{{{latex_b}}} {latex_f} \, dx \fallingdotseq \sum_{{k=1}}^{{{n_val}}} {latex_f_xk}\Delta x")
+    else:
+        st.latex(rf"I = \int_{{{latex_a}}}^{{{latex_b}}} {latex_f} \, dx = \lim_{{n\to \infty}} \sum_{{k=1}}^n {latex_f_xk}\Delta x")
 # グラフ選択
 if method == '指定する':
     all_genre = ["右リーマン和", "左リーマン和", "中央リーマン和", "上リーマン和", "下リーマン和"]
@@ -219,14 +232,8 @@ def get_config(g):
     }
 
 # 描画の実行
-if a != b:
+if a != b and user_formula.strip():
     st.write("---")
-    
-    # 入力された文字列をsympyで数式化し、さらにLaTeX文字列に変換する
-    latex_f = latex(sympify(user_formula))
-    latex_a = latex(sympify(a_str))
-    latex_b = latex(sympify(b_str))
-    
     # $ $ で囲んでMarkdownとして出力する
     st.markdown(f"**$f(x) = {latex_f}$**")
     st.markdown(f"**区間 : ${latex_a}$ から ${latex_b}$**")
@@ -236,6 +243,17 @@ if a != b:
         for g in genre:
             fig = animation_riemann(g, n_val)
             st.plotly_chart(fig, use_container_width=True, config=get_config(g), key=f"anim_{g}")
+            # グラフを「動く状態のまま」HTMLデータに変換する
+            html_str = fig.to_html(include_plotlyjs=True)
+                    
+            # ダウンロードボタンを設置する
+            st.download_button(
+                label=f"📥 {g}のアニメーションを保存（HTML）",
+                data=html_str,
+                file_name=f"{get_config(g)['toImageButtonOptions']['filename']}_anim.html",
+                mime="text/html",
+                key=f"dl_html_{g}"
+            )
     elif method == "∞":
         fig = plot_riemann_sum()
         st.plotly_chart(fig, use_container_width=True, config=get_config("Infinity"), key=f"static_inf_{user_formula}_{a}_{b}")
