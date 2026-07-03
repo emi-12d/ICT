@@ -20,18 +20,32 @@ if not os.path.exists(IMAGE_DIR_ROOT):
     st.error(f"エラー: 画像フォルダ '{IMAGE_DIR_ROOT}' が見つかりません。")
     st.stop()
 
-categories = [f for f in os.listdir(IMAGE_DIR_ROOT) if os.path.isdir(os.path.join(IMAGE_DIR_ROOT, f))]
-categories.sort()
+# 大分類
+main_categories = [f for f in os.listdir(IMAGE_DIR_ROOT) if os.path.isdir(os.path.join(IMAGE_DIR_ROOT, f))]
+main_categories.sort()
 
-if not categories:
+if not main_categories:
     st.warning(f"現在、'{IMAGE_DIR_ROOT}' の中に表示できる分類（フォルダ）はありません。")
     st.stop()
 
 # サイドバーにラジオボタンを作成
-selected_category = st.sidebar.radio("表示する分類を選択", categories)
+selected_main = st.sidebar._selectbox("表示する分類を選択", main_categories)
+
+# 中分類
+main_categories_path = os.path.join(IMAGE_DIR_ROOT, selected_main)
+
+sub_categories = [f for f in os.listdir(main_categories_path) if os.path.isdir(os.path.join(main_categories_path, f))]
+sub_categories.sort()
+
+if not sub_categories:
+    st.warning(f"現在、'{selected_main}' の中に表示できる分類（フォルダ）はありません。")
+    st.stop()
+
+selected_sub = st.sidebar.radio("中分類を選択", sub_categories)
+
 # メイン画面の表示
-category_path = os.path.join(IMAGE_DIR_ROOT, selected_category)
-st.header(f"📂 {selected_category}")
+category_path = os.path.join(main_categories_path, selected_sub)
+st.header(f"📂 {selected_main} > {selected_sub}")
 st.markdown("___")
 
 # 拡張子の選択　（.svg）
@@ -40,7 +54,7 @@ image_files = [f for f in os.listdir(category_path) if f.lower().endswith(valid_
 image_files.sort()
 
 if not image_files:
-    st.warning(f"現在、分類 '{selected_category}' に表示できるSVG画像はありません。")
+    st.warning(f"現在、分類 '{selected_main} > {selected_sub}' に表示できるSVG画像はありません。")
 else:
     # 画像をグリッド状に表示する（3列）
     num_columns = 3
