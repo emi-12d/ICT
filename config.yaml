@@ -1,0 +1,10 @@
+credentials:
+  usernames:
+    testuser:
+      email: test@example.com
+      name: testuser
+      password: $2b$12$tNNL1qq3U1qLS17P.QarD.WFx66AVUYHAaKR6vQ2caxn2l06A3o/G
+cookie:
+  expiry_days: 30 # 再ログインまでの日数
+  key: some_signature_key
+  name: some_cookie_name
