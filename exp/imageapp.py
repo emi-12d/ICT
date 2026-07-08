@@ -32,7 +32,6 @@ while True:
         break
     # 表示名の作成（番号を抜いた形）
     folder_map = {d.split("_", 1)[-1] if "_" in d else d: d for d in sub_dirs}
-    # display_sub_dirs = [d.split("_", 1)[-1] if "_" in d else d for d in sub_dirs]
     selected_dir = st.sidebar.selectbox(
         f"📂 階層 {depth}", 
         list(folder_map.keys()), 
