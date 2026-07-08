@@ -6,9 +6,8 @@ import io
 import resvg_py # png変換
 from PIL import Image # JPEG変換
 
-
-
 st.title("🖼️ 画像アプリ")
+st.write("サイドバーから表示した画像を選択してください。")
 
 # 画像データのルートフォルダのパス
 IMAGE_DIR_ROOT = "images"
@@ -22,6 +21,7 @@ if not os.path.exists(IMAGE_DIR_ROOT):
 
 current_path = IMAGE_DIR_ROOT
 selected_folder_names = []
+display_folder_names = []
 
 depth = 1
 while True:
@@ -30,20 +30,25 @@ while True:
     # 中にフォルダがなければ画像のある階層とみなす
     if not sub_dirs: 
         break
-    
+    # 表示名の作成（番号を抜いた形）
+    folder_map = {d.split("_", 1)[-1] if "_" in d else d: d for d in sub_dirs}
+    # display_sub_dirs = [d.split("_", 1)[-1] if "_" in d else d for d in sub_dirs]
     selected_dir = st.sidebar.selectbox(
         f"📂 階層 {depth}", 
-        sub_dirs, 
+        list(folder_map.keys()), 
         key=f"depth_{depth}_{current_path}"
     )
+    actual_folder_name = folder_map[selected_dir]
 
-    selected_folder_names.append(selected_dir)
-    current_path = os.path.join(current_path, selected_dir)
+    selected_folder_names.append(actual_folder_name)
+    display_folder_names.append(selected_dir)
+
+    current_path = os.path.join(current_path, actual_folder_name)
     depth += 1
 category_path = current_path
 
-if selected_folder_names:
-    title_text = " > ".join(selected_folder_names)
+if display_folder_names:
+    title_text = " > ".join(display_folder_names)
     st.header(f"📂 {title_text}")
 else:
     st.header("📂 ルートフォルダ")
