@@ -3,6 +3,8 @@ import numpy as np
 import plotly.graph_objects as go
 from sympy import symbols, sympify, lambdify, latex, integrate
 from sympy.core.sympify import SympifyError
+import io
+import imageio.v2 as imageio
 
 
 """# リーマン和"""
@@ -95,7 +97,9 @@ save_format = st.radio(
 
 
 # アニメーション付きグラフの生成 
-def animation_riemann(genre_type, start_n, end_n=1000):
+def animation_riemann(genre_type, start_n, speed_multiplier, end_n=1000):
+    base_speed = 100 # 再生速度（基準）
+    play_speed = int(base_speed / speed_multiplier) # 再生速度
     # 分割数のリスト （最初の分割数から1000までの間をnumだけ分割して格納）
     steps_n = np.unique(np.geomspace(start_n, end_n, num=50).astype(int))
     
@@ -181,7 +185,7 @@ def animation_riemann(genre_type, start_n, end_n=1000):
             updatemenus=[dict(  # グラフ上にボタンの配置
                 type="buttons", showactive=False, y=-0.15, x=0, xanchor="left", yanchor="top", direction="right",
                 buttons=[
-                    dict(label="▶", method="animate", args=[None, {"frame": {"duration": 100, "redraw": True}, "fromcurrent": True, "transition": {"duration": 0}}]),
+                    dict(label="▶", method="animate", args=[None, {"frame": {"duration": play_speed, "redraw": True}, "fromcurrent": True, "transition": {"duration": 0}}]),
                     dict(label="■", method="animate", args=[[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate", "transition": {"duration": 0}}])
                 ]
             )],
@@ -192,6 +196,34 @@ def animation_riemann(genre_type, start_n, end_n=1000):
         ), frames=frames
     )
     return fig
+
+# MP4のバイナリデータに変換
+def generate_mp4_bytes(fig, speed_multiplier):
+    frames = []
+    
+    # 全てのフレーム（コマ）を1枚ずつ画像(PNG)にしてリストに貯める
+    for frame in fig.frames:
+        # フレームのデータと、元のレイアウトを合体させて一時的なグラフを作成
+        temp_fig = go.Figure(data=frame.data, layout=fig.layout)
+        
+        # タイトルの反映
+        if frame.layout and frame.layout.title:
+             temp_fig.update_layout(title=frame.layout.title)
+             
+        # PNG画像のバイト列に変換
+        img_bytes = temp_fig.to_image(format="png", width=800, height=600)
+        
+        # imageio で読み込める画像データに変換
+        img = imageio.imread(img_bytes)
+        frames.append(img)
+        
+    # 集めた画像を繋いでMP4にする（fps=10 なら1秒間に10コマ進む）
+    mp4_io = io.BytesIO()
+    # 再生速度の反映
+    speed_fps = 10 * speed_multiplier
+    imageio.mimsave(mp4_io, frames, format='mp4', fps=speed_fps)
+    
+    return mp4_io.getvalue()
 
 # 静止グラフの生成
 def plot_riemann_sum():
@@ -240,21 +272,47 @@ if a != b and user_formula.strip():
 
     if method == "指定する" and n_val is not None and genre:
         st.write(f"**分割数 : {n_val}**")
+
+        # 再生速度変更用スライダー
+        speed_multiplier = st.slider("再生速度", min_value=0.5, max_value=2.0, value=1.0, step=0.25, format="x%g")
         for g in genre:
-            fig = animation_riemann(g, n_val)
+            fig = animation_riemann(g, n_val, speed_multiplier)
             st.plotly_chart(fig, use_container_width=True, config=get_config(g), key=f"anim_{g}")
-            # グラフを「動く状態のまま」HTMLデータに変換する
-            html_str = fig.to_html(include_plotlyjs=True)
-                    
-            # ダウンロードボタンを設置する
-            st.download_button(
-                label=f"📥 {g}のアニメーションを保存（HTML）",
-                data=html_str,
-                file_name=f"{get_config(g)['toImageButtonOptions']['filename']}_anim.html",
-                mime="text/html",
-                key=f"dl_html_{g}"
-            )
+
+            col1, col2 = st.columns(2)
+            with col1:
+                # グラフを「動く状態のまま」HTMLデータに変換する
+                html_str = fig.to_html(include_plotlyjs=True)
+                        
+                # ダウンロードボタンを設置する
+                st.download_button(
+                    label=f"📥 {g}のアニメーションを保存（HTML）",
+                    data=html_str,
+                    file_name=f"{get_config(g)['toImageButtonOptions']['filename']}_anim.html",
+                    mime="text/html",
+                    key=f"dl_html_{g}" 
+                )
+            with col2:                        
+                if st.button(f"🎥 {g}のMP4動画を生成する（時間がかかります）", key=f"btn_mp4_{g}"):
+        
+                    # ローディング表示
+                    with st.spinner("MP4動画を生成中です...（コマ数に応じて数十秒〜数分かかります）"):
+                        try:
+                            # MP4データを生成
+                            mp4_bytes = generate_mp4_bytes(fig, speed_multiplier)
+                            st.success("動画の生成が完了しました！下のボタンから保存できます。")
+                            
+                            # 生成に成功したら、ダウンロードボタンを出現させる
+                            st.download_button(
+                                label=f"📥 {g}のMP4を保存",
+                                data=mp4_bytes,
+                                file_name=f"{g}_anim.mp4",
+                                mime="video/mp4",
+                                key=f"dl_mp4_{g}"
+                            )
+                        except Exception as e:
+                            st.error(f"エラーが発生しました: {e}\n\n")
     elif method == "∞":
         fig = plot_riemann_sum()
         st.plotly_chart(fig, use_container_width=True, config=get_config("Infinity"), key=f"static_inf_{user_formula}_{a}_{b}")
- 
+
