@@ -1,13 +1,15 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 
-import yaml
-from yaml.loader import SafeLoader
 
 st.set_page_config(page_title="ICT教材バンク")
 
-with open('./config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+if "credentials" in st.secrets:
+    config = st.secrets.to_dict()
+    print("Secretsから読み込みました")
+else:
+    print("Secretsが見つかりませんでした")
+
 
 authenticator = stauth.Authenticate(
     config['credentials'],
@@ -22,9 +24,9 @@ authenticator.login()
 if st.session_state["authentication_status"]:
 
     # サイドバーに表示する項目
-    home = st.Page("exp/home.py", title="ホーム", default=True)
-    calc_hub = st.Page("exp/mathapp.py", title="自動計算アプリ")
-    image_app = st.Page("exp/imageapp.py", title="画像アプリ")
+    home = st.Page("exp/home.py", title="ホーム", default=True, icon="🏠")
+    calc_hub = st.Page("exp/mathapp.py", title="自動計算アプリ", icon="🧮")
+    image_app = st.Page("exp/imageapp.py", title="画像アプリ", icon="🖼️")
 
     # 自動計算アプリの項目
     riemann = st.Page("pages/リーマン和.py", title="リーマン和")
