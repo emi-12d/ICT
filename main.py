@@ -29,6 +29,7 @@ if st.session_state["authentication_status"]:
     home = st.Page("exp/home.py", title="ホーム", default=True, icon="🏠")
     calc_hub = st.Page("exp/mathapp.py", title="自動計算アプリ", icon="🧮")
     image_app = st.Page("exp/imageapp.py", title="画像アプリ", icon="🖼️")
+    movie_app = st.Page("exp/movie.py", title="動画アプリ", icon="🎬")
 
     # 自動計算アプリの項目
     riemann = st.Page("pages/リーマン和.py", title="リーマン和")
@@ -36,7 +37,7 @@ if st.session_state["authentication_status"]:
 
     # サイドバーに表示させたくない項目
     pg = st.navigation(
-        [home, calc_hub, image_app, riemann, regression],
+        [home, calc_hub, image_app, movie_app, riemann, regression],
         position="hidden"
     )
 
@@ -47,6 +48,7 @@ if st.session_state["authentication_status"]:
         st.page_link(home)
         st.page_link(calc_hub)
         st.page_link(image_app)
+        st.page_link(movie_app)
 
     pg.run()
 
