@@ -7,7 +7,7 @@ import resvg_py # png変換
 from PIL import Image # JPEG変換
 
 st.title("🖼️ 画像アプリ")
-st.write("サイドバーから表示した画像を選択してください。")
+st.write("サイドバーから表示したい画像を選択してください。")
 
 # 画像データのルートフォルダのパス
 IMAGE_DIR_ROOT = "images"
