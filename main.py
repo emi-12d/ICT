@@ -6,7 +6,6 @@ st.set_page_config(page_title="ICT教材バンク")
 
 if "credentials" in st.secrets:
     config = st.secrets.to_dict()
-    print("Secretsから読み込みました")
 else:
     print("Secretsが見つかりませんでした")
 
@@ -22,6 +21,9 @@ authenticator.login()
 
 # ログイン成功
 if st.session_state["authentication_status"]:
+    username = st.session_state["username"]
+
+    user_role = config['credentials']['usernames'][username].get('role', 'student')
 
     # サイドバーに表示する項目
     home = st.Page("exp/home.py", title="ホーム", default=True, icon="🏠")
@@ -40,6 +42,7 @@ if st.session_state["authentication_status"]:
 
     # サイドバーに表示したい項目
     with st.sidebar:
+        st.write(f"{user_role}用")
         st.write("### メニュー")
         st.page_link(home)
         st.page_link(calc_hub)
